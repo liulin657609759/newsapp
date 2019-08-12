@@ -18,4 +18,68 @@
 1. 以结构或控件抽离组件
 2. 以功能抽离模块
 3. 以任务抽离程序
-4. 以典型功能抽离工具
+4. 以典型功能抽离工具LIULI
+## 其他配置
+- 字体设置(common.js)
+> document.documentElement.style.fontSize=document.documentElement.clientWidth/37.5+"px"
+> html{
+>    height: 100%;
+>    font-size: 1.2rem
+>}
+- html文件中移动端视口
+> <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+- 300ms延迟/多点阻止默认事件
+```
+window.addEventListener('load', function () {
+  FastClick.attach(document.body);
+}, false);
+
+document.documentElement.addEventListener('touchmove', function (event) {
+  if (event.touches.length > 1) {
+  	event.preventDefault();
+  }
+}, false);
+```
+- css公共样式
+```
+html {
+	height: 100%;
+	font-size: 1.2rem;
+
+	body {
+		height: 100%;
+		margin: 0;
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        p {
+        	font-weight: normal;
+        	margin: 0;
+        }
+
+        a {
+        	text-decoration: none;
+        	color: #000;
+        }
+
+        img {
+        	width: 100%;
+        }
+
+        .app {
+            position: relative;
+            height: 100%;
+            background-color: #f5f7f8;
+
+            .list {
+            	overflow-y: auto;
+            	background-color: #fff;
+            }
+        }
+	}
+}
+```
