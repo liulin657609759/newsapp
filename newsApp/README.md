@@ -27,7 +27,9 @@
 >    font-size: 1.2rem
 >}
 - html文件中移动端视口
-> <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+```
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+```
 - 300ms延迟/多点阻止默认事件
 ```
 window.addEventListener('load', function () {
