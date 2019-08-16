@@ -85,3 +85,60 @@ html {
 	}
 }
 ```
+## 组件创建
+- ES6引入图片(相对路径)
+> <img src="${require('../../images/backward.png')}" class="img-icon" style="display: {{showLeftIcon}}" />
+- 点击后退
+> <a href="javascript:history.back(-1)"></a>
+- 点击到其他页面
+> <a href="collections.html"></a>
+*** 
+- 导出视图
+1. 将tpl模板模块,scss样式模块导入到js文件
+> import tpl from './index.tpl';//tpl是一个函数
+> import './index.scss';
+2. 再由index.js文件导出
+```
+export default () => {
+	return {
+		name: 'header',
+		tpl (options) {//options为要替换的内容
+      //模板替换
+      return tpl().replace(tools.tplReplace(), (node, key) => {
+      	return {
+          title: options.title,
+          showLeftIcon: !options.showLeftIcon && 'none',
+          showRightIcon: !options.showRightIcon && 'none'
+      	}[key];
+      })
+		}
+	}
+}
+```
+3. 在入口文件中引入
+```
+import Header from '../components/header/index';
+const header = new Header(),
+const App = ($, win) => {
+  
+  const $app = $('#app');//拿到#app元素
+
+  //入口文件必须要有的方法
+  const init=()=>{
+    render();
+  }
+  const render=()=>{
+    _renderHeader();
+  }
+  const _renderHeader = () => {
+    //调用组件的模板替换方法并将组件模板append到页面
+    //header.tpl()方法的返回值就是替换完成的组件模板字符串
+    $app.append(header.tpl({
+  		title: 'JS++新闻头条',
+  		showLeftIcon: false,
+  		showRightIcon: true
+  	}));
+  }
+}
+```
+> 这样组件就可以在页面中渲染出来了
