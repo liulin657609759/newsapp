@@ -1,3 +1,4 @@
+## 本项目的所有数据来自“聚合”
 ## 项目开发要注意的点
 - 减少http请求
 > 百度上线的html源码中有许多影响性能的css样式，和js代码
@@ -142,3 +143,115 @@ const App = ($, win) => {
 }
 ```
 > 这样组件就可以在页面中渲染出来了
+- 导航条组件
+1. 导航条的滚动
+> HTML
+```
+<nav class="nav">
+	<div class="scroll">
+		<div class="nav-wrapper" style="width: {{wrapperW}}">
+			
+		</div>
+	</div>
+</nav>
+
+<div class="item {{isCurrent}}" data-type="{{type}}">{{typeName}}</div>
+```
+> sass
+```
+.nav {
+	position: fixed;
+	top: 4.4rem;
+	left: 0;
+	z-index: 2;
+	width: 100%;
+	height: 3.5rem;
+	border-bottom: 1px solid #ddd;
+	background-color: #fff;
+	overflow: hidden;
+//导航条下面有滚动条的问题！
+//1. 将.scroll的height 变大（本来是3.5，现在4.2）
+//2. 然后给父元素.nav设置over-flow：hidden；
+	.scroll {
+		height: 4.2rem;
+		-webkit-overflow-scrolling: touch;
+		overflow-x: auto;
+
+		.nav-wrapper {
+			display: flex;
+			flex-direction: row;
+			height: 3.5rem;
+
+			.item {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				width: 6rem;
+				font-size: 1.6rem;
+        <!-- 如果有.current类，就添加样式 -->
+				&.current {
+					color: #ec7a70;
+				}
+			}
+		}
+	}
+}
+```
+2. 导航条点击字体颜色改变
+```
+const bindEvent = () => {
+    $('.nav .nav-wrapper').on('click', '.item', navSelect);
+    $list.on('click', '.news-item', toDetailPage);
+  }
+```
+```
+// 点击哪个就给哪个添加类名current，然后把兄弟元素的current类名全都移除
+    $this.addClass('current').siblings('.item').removeClass('current');
+    _renderList(field, pageNum, showCount);
+  }
+```
+- 前端获取数据并进行分页
+1.  后台返回的数据本来是三十条，如今要分成三页，每页十条
+2. 直接使用Ajax 获取数据的话，因为Ajax是异步的，如果有多个异步请求的话
+> 前端向后端发送请求request1，需要获得数据data1，发起请求request2同时需要请求参数data1，需要获得数据data2，然后紧接着需要利用data2进行某项运算。。。。理想状态下，按思路代码一路执行，是没有问题的
+> 但是！ajax是一个异步操作，由于网路延迟request2执行的时候，很可能request1还没有返回数据data1，于是获取不到data1，request2失败，SO，data2页获取不到了。。。 
+```
+class IndexModel extends HTTP {
+  getNewsList (field, showCount) {
+  	return new Promise((resolve, reject) => {
+  		this.ajax({
+	      url: 'Juhe/getNewsList',
+	      type: 'POST',
+	      dataType: 'JSON',
+	      data: {
+	      	field
+	      },
+        <!-- 得到数据后，进行数据分页 -->
+	      success (data) {
+	      	const listDatas = data.result.data,
+	      	      len = listDatas.length;
+
+	      	let pageData = [],
+	      	    index = 0;
+
+	      	while (index < len) {
+	      		pageData.push(listDatas.slice(index, index += showCount));
+	      	}
+
+	      	resolve(pageData);
+	      },
+
+	      error () {
+          resolve(404);
+	      }
+	  	});
+  	});
+  }
+}
+```
+3. 然后
+```
+indexModel.getNewsList(field,10).then((res)=>{
+  <!-- 对数据进行处理，参数认识就是返回的数据 -->
+})
+```
