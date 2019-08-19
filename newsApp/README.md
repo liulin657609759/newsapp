@@ -356,3 +356,80 @@ const _renderList = (field, pageNum, showCount) => {
 ```
 6. 再点击导航条的时候调用_renderList(field, pageNum, showCount);
 
+- 上拉加载更多
+1. 创建正在加载的组件(bottom_tip)
+2. 创建让其在页面渲染的函数
+```
+  const _handleBottomTip = (how, isLoading, text) => {
+    switch (how) {
+      case 'append':
+        $app.append(bottomTip.tpl(isLoading, text));
+        break;
+      case 'remove': 
+        $('.bottom-tip').remove();
+        break;
+      case 'removeAndAppend':
+        $('.bottom-tip').remove();
+        $app.append(bottomTip.tpl(isLoading, text));
+        break;
+      default:
+        break;
+    }
+  }
+```
+3. 当导航条到底部时加载数据(utils/tools下)
+```
+function scrollToBottom (callback) {
+  if (_getScrollTop() + _getWindowHeight() == _getScrollHeight()) {
+    callback();
+  }
+}
+```
+4. 在入口函数引用3.中的函数，并传入参数
+```
+newScrollToBottom = tools.scrollToBottom.bind(null, scrollToBottom);
+```
+5. 创建scrollToBottom函数
+```
+function scrollToBottom () {
+    if (pageNum < pageCount - 1) {
+      if (!bottomLock) {
+        bottomLock = true;
+        _handleBottomTip('append', 'loading', '正在努力加载中');
+        setTimeout(() => {
+          pageNum ++;
+          _insertList('append');
+        }, 1000);
+      }
+    } else {
+      _handleBottomTip('removeAndAppend', 'final', '已加载完所有内容');
+    }
+  }
+```
+6. 在渲染新闻列表的时候，绑定滚动条事件
+> 注意：当点击其他导航条列表的时候，要让滚动条回到顶部；所以在每次
+```
+  const _insertList = (method) => {
+    switch (method) {
+      case 'cover':
+        $list.html(newsItem.tpl(dataCache[field][pageNum], pageNum));
+        <!-- 滚动条回到顶端 -->
+        _scrollToTop(150);
+        _handlePageLoading('remove');
+        _afterRender(true);
+        break;
+
+      case 'append':
+        $list.append(newsItem.tpl(dataCache[field][pageNum], pageNum));
+        _afterRender(false);
+    }
+    
+    bottomLock = false;
+    _handleBottomTip('remove');
+  }
+  <!-- 在渲染图片的时候绑定事件 -->
+  const _afterRender = (bindScroll) => {
+    bindScroll && $window.on('scroll', newScrollToBottom);
+    tools.thumbShow($('.news-thumb'));
+  }
+```
