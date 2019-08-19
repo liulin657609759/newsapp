@@ -252,6 +252,107 @@ class IndexModel extends HTTP {
 3. 然后
 ```
 indexModel.getNewsList(field,10).then((res)=>{
-  <!-- 对数据进行处理，参数认识就是返回的数据 -->
+  <!-- 对数据进行处理，参数res就是返回的数据 -->
 })
 ```
+- 新闻列表(new_item)
+1. 每条新闻中图片不一(多模板渲染)
+> 1. 针对不同个图片设计多个模板
+> 2. 在sass文件中使用“&”(连体符)设置不同的样式
+> 3. 在js中根据数据内容判断这条新闻数据有几张图片
+```
+data.forEach((item, index) => {
+        if (!item.thumbnail_pic_s) {
+        	template = tpl_0();
+        } else if (item.thumbnail_pic_s && !item.thumbnail_pic_s02) {
+        	template = tpl_1();
+        } else if (item.thumbnail_pic_s02 && !item.thumbnail_pic_s03) {
+        	template = tpl_2();
+        } else if (item.thumbnail_pic_s03) {
+        	template = tpl_3();
+        }
+```
+2. 图片预加载
+> 1. 设置css
+```
+img {
+		height: 100%;
+		opacity: 0;
+		transition: opacity .5s;
+	}
+```
+> 2. 在utils/tools.js中定义加载图片函数
+```
+function thumbShow (dom) {
+	dom.on('load', function () {
+      $(this).css('opacity', 1);
+	});
+}
+```
+> 3. 在入口文件中调用(参数根据类名找到的所有图片)
+```
+tools.thumbShow($('.news-thumb'));
+```
+- 缓存池
+1. 声明一个对象
+```
+let field = 'top',
+      pageNum = 0,
+      pageCount = 0,
+      showCount = 10,
+      dataCache = {},
+```
+2. 在数据渲染到页面之前进行判断，若果缓存池里有当前点击的项目的数据，就从缓存池里拿，如果没有就进行Ajax请求数据，
+3. 在请求数据之前要先渲染pageLoading组件
+```
+  const _handlePageLoading = (how) => {
+    switch(how) {
+      case 'append':
+        $list.html('');
+        $app.append(pageLoading.tpl());
+        break;
+      case 'remove':
+        $('.loading-icon').remove();
+        break;
+      default:
+        break;
+    }
+  }
+```
+4. 然后
+```
+const _renderList = (field, pageNum, showCount) => {
+    if (dataCache[field]) {
+      pageCount = dataCache[field].length;
+      _insertList('cover');
+    } else {
+      _handlePageLoading();
+      indexModel.getNewsList(field, showCount).then((res) => {
+        dataCache[field] = res;
+        pageCount = dataCache[field].length;
+        
+        setTimeout(() => {
+          _insertList('cover');
+        }, 1000);
+      });
+    }
+  }
+```
+5. 其中_insertList('cover');函数是渲染新闻列表
+```
+  const _insertList = (method) => {
+    switch (method) {
+      case 'cover':
+        $list.html(newsItem.tpl(dataCache[field][pageNum], pageNum));
+        _handlePageLoading('remove');
+        break;
+
+      case 'append':
+        $list.append(newsItem.tpl(dataCache[field][pageNum], pageNum));
+		<!-- _afterRender是加载图片的函数 -->
+        _afterRender(false);
+    }
+  }
+```
+6. 再点击导航条的时候调用_renderList(field, pageNum, showCount);
+
