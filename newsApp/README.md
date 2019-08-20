@@ -433,3 +433,59 @@ function scrollToBottom () {
     tools.thumbShow($('.news-thumb'));
   }
 ```
+- 跳转页面与数据传递
+1. 首先，我们要知道当前点击的是哪个(使用事件绑定机制)
+> newScrollToBottom = tools.scrollToBottom.bind(null, scrollToBottom);
+2. 如何将被点击的元素的内容及属性传递给新的页面(将当前元素的数据当做属性写在最外层标签里)
+```
+<div class="news-item type-0" data-url="{{url}}" data-page="{{pageNum}}" data-index="{{index}}" data-uniquekey="{{uniquekey}}">
+	<h1>{{title}}</h1>
+	<div class="info">
+		<span class="author">{{author}}</span>
+		<span class="date">{{date}}</span>
+	</div>
+</div>
+```
+3. 获取并存储当前元素通过标签属性传递过来的数据(通过localstorage存储，并通过bom跳转到相应的页面，并且将参数写在url地址里)
+```
+function toDetailPage () {
+    const $this = $(this),
+          url = $this.attr('data-url'),
+          idx = $this.attr('data-index'),
+          pageNum = $this.attr('data-page');
+
+    localStorage.setItem('target', JSON.stringify(dataCache[field][pageNum][idx]));
+    win.location.href = `detail.html?news_url=${url}&uniquekey=${dataCache[field][pageNum][idx].uniquekey}`;
+  }
+```
+- 新闻详情页的渲染
+1. 创建一个iframe组件，使用iframe标签包裹要传过来的页面
+```
+<iframe src="{{news_url}}" frameborder="0" width="100%" height="100%" id="js-news-frame"></iframe>
+```
+2. 在js文件中进行字符串替换
+```
+export default () => {
+	return {
+		name: 'newsFrame',
+		tpl (url) {
+      return tpl().replace(tools.tplReplace(), url);     
+		}
+	}
+}
+```
+3. 在utils文件下的tools文件中添加截取url字段的方法(该函数返回的是新闻详情页的地址)
+```
+function getUrlQueryValue (key) {
+  const reg = new RegExp('(^|&)' + key + '=([^&]*)(&|$)', 'i'),
+        res = window.location.search.substr(1).match(reg);
+
+  return res != null ? decodeURIComponent(res[2]) : null;
+}
+```
+3. 在detail.js文件中保存newUrl并将其传给组件函数newsFrame.tpl(newUrl),然后append到detail.html页面中
+```
+const _renderFrame = (newsUrl) => {
+    $frameWrapper.append(newsFrame.tpl(newsUrl));
+  }
+```
