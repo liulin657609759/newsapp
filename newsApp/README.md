@@ -88,7 +88,7 @@ html {
 ```
 ## 组件创建
 - ES6引入图片(相对路径)
-> <img src="${require('../../images/backward.png')}" class="img-icon" style="display: {{showLeftIcon}}" />
+> "<img src="${require('../../images/backward.png')}" class="img-icon" style="display: {{showLeftIcon}}" />"
 - 点击后退
 > <a href="javascript:history.back(-1)"></a>
 - 点击到其他页面
