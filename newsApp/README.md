@@ -475,6 +475,7 @@ export default () => {
 }
 ```
 3. 在utils文件下的tools文件中添加截取url字段的方法(该函数返回的是新闻详情页的地址)
+> 事实上，也可以通过localstorage中的target取得数据
 ```
 function getUrlQueryValue (key) {
   const reg = new RegExp('(^|&)' + key + '=([^&]*)(&|$)', 'i'),
@@ -489,3 +490,57 @@ const _renderFrame = (newsUrl) => {
     $frameWrapper.append(newsFrame.tpl(newsUrl));
   }
 ```
+- 点击收藏按钮进行收藏
+1. 新闻详情页右上角的五角星收藏按钮为一个组件(collector)
+```
+<div class="collector {{type_class}}"></div>
+```
+```
+export default () => {
+	return {
+		name: 'collector',
+		tpl (collected) {
+			return tpl().replace(tools.tplReplace(), collected ? 'full' : 'o');
+		},
+
+		changeCollector (collected) {
+			$('.collector').addClass(collected ? 'full' : 'o')
+                           .removeClass(collected ? 'o' : 'full');
+		}
+	}
+}
+```
+2. 判断localStorage中有没有收藏过的新闻（collections）没有的话就创建一个collections,并且判断这个collections中有没有当前新闻的uniquekey，如果有的话，就代表这个新闻被收藏过，返回boolean值
+```
+let collections = JSON.parse(localStorage.getItem('collections')) || {},
+      collected = Boolean(collections[uniquekey]);
+```
+3. 将collector组件append到detail页面中
+```
+const _renderCollector = (collected) => {
+    $app.append(collector.tpl(collected));
+  }
+```
+4. 设置绑定事件
+```
+const bindEvent = () => {
+    $('.collector').on('click', newsCollect);
+  }
+```
+> 点击事件的回调函数(如果collections中有本条新闻，即已经收藏过，那么点击收藏就删除这条数据，否则就添加这条数据，并且将collected的值进行反转，然后将collections存储到localStorage中)
+```
+  function newsCollect () {
+    console.log(1);
+    if (collections[uniquekey]) {
+      delete collections[uniquekey];
+      collected = false;
+    } else {
+      collections[uniquekey] = JSON.parse(localStorage.getItem('target'));
+      collected = true;
+    }
+
+    localStorage.setItem('collections', JSON.stringify(collections));
+    collector.changeCollector(collected);
+  }
+```
+
