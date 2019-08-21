@@ -1,4 +1,6 @@
+# 一个使用原生js模块化项目(头条新闻)
 ## 本项目的所有数据来自“聚合”
+[api地址](https://www.juhe.cn/docs/api/id/235)
 ## 项目开发要注意的点
 - 减少http请求
 > 百度上线的html源码中有许多影响性能的css样式，和js代码
@@ -549,4 +551,118 @@ const bindEvent = () => {
     collector.changeCollector(collected);
   }
 ```
+- 收藏页面
+1. 若果没有新闻收藏，创建没有收藏新闻的组件(no_content_tip)
+2. 如果有有收藏，即collections不为空或者Object.keys(collections).length 不等于0；那么就调用新闻列表newsItem.tpl()添加到收藏页面内；并且调用tools.thumbShow()方法对图片进行加载
+```
+const render = () => {
+    return new Promise((resolve, reject) => {
+      _renderHeader();
+
+      if (!collections || Object.keys(collections).length === 0) {
+        _renderNoContentTip('没有收藏新闻');
+      } else {
+        _renderList(collections);
+      }
+
+      resolve();
+    });
+  }
+```
+> 调用newItem组件进行收藏页面渲染，并随图片进行加载
+```
+  const _renderList = (data) => {
+    $list.append(newsItem.tpl(_arrangeDatas(data)));
+    tools.thumbShow($('.news-thumb'));
+  }
+```
+> 其中，_arrangeDatas(data)函数是对数据进行数组化
+```
+function _arrangeDatas (data) {
+    let _arr = [];
+
+    for (let key in data) {
+      _arr.push(data[key]);
+    }
+
+    return _arr;
+  }
+```
+3. 添加点击事件（收藏页面的新闻也要像新闻列表一样可以点击到详情页,在点击时，也要像在新闻列表一样，在localStorage中添加一个target，具体做法是：选中当前元素的'data-uniquekey'属性，从collections中获取到，添加到target中）
+```
+const bindEvent = () => {
+    $list.on('click', '.news-item', toDetailPage);
+  }
+```
+```
+  function toDetailPage () {
+    const $this = $(this),
+          url = $this.attr('data-url'),
+          uniquekey = $this.attr('data-uniquekey');
+
+    localStorage.setItem('target', JSON.stringify(collections[uniquekey]));
+    window.location.href = `detail.html?news_url=${url}&uniquekey=${uniquekey}`;
+  }
+```
+- 最后对项目进行异常处理
+1. 如果我们没有收藏东西即没有localStorage.getItem('target'),那么无论url无论定位到哪个页面都要回到主页index.html
+> 最主要的是将这个方法写到script标签中，并且放到html代码里，这样就减少了http请求，有助于性能
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+	<title><%= htmlWebpackPlugin.options.title %></title>
+	<script type="text/javascript">
+		if (!localStorage.getItem('target')) {
+			window.location.href = 'index.html';
+		}
+	</script>
+</head>
+<body>
+	<div id="app" class="app">
+		<div class="frame-wrapper"></div>
+	</div>
+
+	<script src="scripts/zepto.min.js"></script>
+	<script src="scripts/fastclick.js"></script>
+	<script src="scripts/common.js"></script>
+</body>
+</html>
+```
+2. 当出现网路错误，404等，需要创建错误组件(error_tip)
+> 引用
+```
+const _renderList = (field, pageNum, showCount) => {
+    if (dataCache[field]) {
+      pageCount = dataCache[field].length;
+      _insertList('cover');
+    } else {
+      _handlePageLoading('append');
+      indexModel.getNewsList(field, showCount).then((res) => {
+        if (res == 404) {
+          _handleErrorTip('append', '没有找到网络');
+          _handlePageLoading('remove');
+          return;
+        }
+```
+```
+const _handleErrorTip = (how, text) => {
+    switch (how) {
+      case 'append': 
+        $app.append(errorTip.tpl(text));
+        break;
+      case 'remove':
+        $('.error-tip').remove();
+        break;
+      default:
+        break;
+    }
+  }
+```
+## 至此，本项目结束。。。
+
+
+
 
